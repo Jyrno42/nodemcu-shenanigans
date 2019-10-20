@@ -26,3 +26,9 @@ repl
 ## But mooom! something does not work
 
 Pls don't file any issues or something. Figure it out on your own, or look for proper tutorials.
+
+### FAQ
+
+**OSError 23 when opening a socket:**
+
+just restart the board, the sockets are all in use
