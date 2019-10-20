@@ -1,0 +1,2 @@
+shell:
+	mpfshell ttyUSB0
