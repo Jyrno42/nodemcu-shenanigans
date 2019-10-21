@@ -1,0 +1,13 @@
+[Unit]
+Description=mDNS announcement node app
+After=network.target
+
+[Service]
+User=yolo
+WorkingDirectory=/home/yolo/mdns
+ExecStart=node multi.js
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

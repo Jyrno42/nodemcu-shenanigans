@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Simple dashboard</title>
+
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans|Roboto+Mono&display=swap" rel="stylesheet">
+    </head>
+
+    <body>
+        <div>
+            <div class="value">
+                <span id="time"></span>
+                <label>Time</label>
+            </div>
+            <div class="value">
+                <b id="date"></b>
+                <label>Date</label>
+            </div>
+        </div>
+        <div>
+            <div class="value">
+                <b id="temp">-</b>
+                <label>Temperature</label>
+            </div>
+            <div class="value">
+                <b id="hum">-</b>
+                <label>Humidity</label>
+            </div>
+        </div>
+
+        <script>
+            const prependZero = (str) => {
+                const val = `${str}`;
+
+                if (val.length === 2) {
+                    return val;
+                }
+
+                return `0${val}`;
+            };
+
+            window.onload = () => {
+                const timeNode = document.getElementById('time');
+                const dateNode = document.getElementById('date');
+                const tempNode = document.getElementById('temp');
+                const humNode = document.getElementById('hum');
+                let t = 0;
+
+                setInterval(() => {
+                    const d = new Date();
+
+                    const sep = t % 2 === 0 ? ':' : ' ';
+                    timeNode.textContent = `${prependZero(d.getHours())}${sep}${prependZero(d.getMinutes())}`;
+                    dateNode.textContent = `${d.getDate()}.${d.getMonth()}.${d.getFullYear()}`;
+
+                    t += 1;
+                }, 1000);
+
+                setInterval(() => {
+                    fetch('/api/measurements', {
+                        headers: {
+                            accept: 'application/json'
+                        }
+                    }).then((res) => {
+                        if (res.ok) {
+                            res.json().then((data) => {
+                                if (data.temperature) {
+                                    tempNode.textContent = `${data.temperature}°C`;
+                                }
+                            
+                                if (data.humidity) {
+                                    humNode.textContent = `${data.humidity}%`;
+                                }
+                            });
+                        }
+                    });
+                }, 2000);
+            };
+        </script>
+
+        <style type="text/css">
+            body {
+                background-color: #29292e;
+                font-family: 'Roboto Mono', monospace;
+                margin: 0;
+                padding: 0;
+                height: 100vh;
+                width: 100vw;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+
+            body > div {
+                height: 100vh;
+                width: 100vw;
+                display: flex;
+                align-items: center;
+                justify-content: space-around;
+                flex-direction: row;
+            }
+
+            .value {
+                color: #fff;
+                font-weight: bold;
+                font-size: 8em;
+                position: relative;
+                text-shadow: 2px 4px 3px rgba(0,0,0,0.3);
+                min-width: 240px;
+                padding-bottom: 20px;
+                text-align: center;
+            }
+
+            .value > b {
+                margin-left: -8px;
+                letter-spacing: -8px;
+            }
+
+            .value > label {
+                color: #c2bebe;
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                
+                font-size: .2em;
+                text-align: center;
+                text-transform: uppercase;
+            }
+        </style>
+    </body>
+</html>
