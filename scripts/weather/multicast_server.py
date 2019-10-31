@@ -31,7 +31,7 @@ try:
 
         if data and data.startswith(b'MARCO'):
             node_id = data[6:].decode('utf-8')
-        
+
             s.sendto('POLO {} {}'.format(node_id, get_local_ip()).encode('utf-8'), ('239.0.0.22', 3535))
             print(node_id)
 

@@ -1,22 +1,26 @@
 # Port can be defined globally but defaults to ttyUSB0
 PORT ?= ttyUSB0
 
-.PHONY: shell install_common install_multicast
+.PHONY: shell install_sleep install_multicast
 
 shell:
 	mpfshell -o ${PORT}
 
 
-install_multicast: install_common
-	mpfshell -o ${PORT} -n -c "put scripts/weather/with_multicast.py multi.py"
-	# modify pin number ifneedbe
-	echo -e "from multi import main\n\nmain(4)" > .tmp/mult-main.py
-	mpfshell -o ${PORT} -n -c "put .tmp/mult-main.py main.py"
+install_multicast: install_sleep
+	mpfshell -o ${PORT} -n -c "put scripts/moisture/boot.py boot.py"
+	mpfshell -o ${PORT} -n -c "put scripts/moisture/controller.py controller.py"
+	mpfshell -o ${PORT} -n -c "put scripts/weather/with_multicast.py main.py"
 
 
-install_common:
-	mpfshell -o ${PORT} -n -c "put scripts/weather/wifi.py wifi.py"
+install_sleep:
 	mpfshell -o ${PORT} -n -c "put scripts/weather/sleep.py sleep.py"
+
+
+install_moisture:
+	mpfshell -o ${PORT} -n -c "put scripts/moisture/boot.py boot.py"
+	mpfshell -o ${PORT} -n -c "put scripts/moisture/controller.py controller.py"
+	mpfshell -o ${PORT} -n -c "put scripts/moisture/read_moisture.py main.py"
 
 flash:
 	@echo "Run this:"

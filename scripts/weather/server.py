@@ -1,46 +1,28 @@
+import atexit
 import json
 import socket
 import struct
 import re
 import threading
+import traceback
 
 from datetime import datetime
 from time import sleep
 
-from flask import Flask
-
-app = Flask(__name__)
-
-with open('multicast-dashboard.html') as h:
-    html_content = h.read()
+from flask import Flask, abort, jsonify, render_template, request
 
 state = {
     'ip': None,
-    'sensor_tick': None,
     'temperature': None,
-    'humidity': None
+    'moisture': 'no-value',
+    'humidity': 'no-value'
 }
 
-@app.route('/')
-def root():
-    return html_content
+POOL_TIME = 5
 
-
-@app.route('/api/measurements')
-def measurements():
-    return state
-
-
-@app.route('/api/ip')
-def get_ip():
-    return state['ip']
-
-
-@app.route('/api/ip/refresh', methods=['POST'])
-def api_refresh_ip():
-    state['ip'] = get_local_ip()
-
-    return state['ip']
+data_lock = threading.Lock()
+ip_thread = threading.Thread()
+socket_thread = threading.Thread()
 
 
 def get_local_ip():
@@ -59,7 +41,12 @@ def get_local_ip():
 def refresh_ip():
     while True:
         state['ip'] = get_local_ip()
-        sleep(180)
+
+        if state['ip'] == '127.0.0.1':
+            sleep(10)
+
+        else:
+            sleep(180)
 
 
 def run_socket():
@@ -74,31 +61,121 @@ def run_socket():
         s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
         while True:
-            data = s.recvfrom(100)[0]
-            data = data.decode('utf-8')
+            data = s.recv(100)
 
-            try:
-                data = json.loads(data)
-
-                try:
-                    state['temperature'] = round(data['temperature'], 1)
-
-                except (TypeError, ValueError):
-                    state['temperature'] = None
-
-                try:
-                    state['humidity'] = int(data['humidity'])
-
-                except (TypeError, ValueError):
-                    state['humidity'] = 'no-value'
-
-                state['sensor_tick'] = datetime.now().isoformat().split('.')[0]
-
-            except (ValueError, TypeError):
-                pass
+            if data and data.startswith(b'MARCO'):
+                node_id = data[6:].decode('utf-8')
+            
+                s.sendto('POLO {} {}'.format(node_id, get_local_ip()).encode('utf-8'), ('239.0.0.22', 3535))
 
     finally:
         s.close()
 
-threading.Thread(target=run_socket).start()
-threading.Thread(target=refresh_ip).start()
+
+def create_app():
+    app = Flask(__name__)
+
+    def start():
+        global ip_thread
+        global socket_thread
+
+        ip_thread = threading.Thread(target=refresh_ip)
+        socket_thread = threading.Thread(target=run_socket)
+
+        ip_thread.start()
+        socket_thread.start()
+
+    start()
+
+    return app
+
+app = create_app()
+
+
+@app.route('/')
+def root():
+    return render_template('multicast-dashboard.html')
+
+
+@app.route('/api/measurements')
+def measurements():
+    return state
+
+
+@app.route('/api/ip')
+def get_ip():
+    return state['ip']
+
+
+@app.route('/api/status')
+def status():
+    return jsonify({
+        'name': 'probe-controller.local'
+    }), 200
+
+
+@app.route('/api/ip/refresh', methods=['POST'])
+def api_refresh_ip():
+    state['ip'] = get_local_ip()
+
+    return state['ip']
+
+
+@app.route('/api/temperature', methods=['POST'])
+def api_update_temperature():
+    value = request.json.get('value', None)
+    timestamp = request.json.get('timestamp', None)
+
+    if value is None or timestamp is None:
+        return abort(400)
+
+    try:
+        value = round(float(value), 1)
+
+    except:
+        traceback.print_exc()
+        return abort(400)
+
+    state['temperature'] = [timestamp, value]
+
+    return jsonify({'temperature': state['temperature']}), 200
+
+
+@app.route('/api/humidity', methods=['POST'])
+def api_update_humidity():
+    value = request.json.get('value', None)
+    timestamp = request.json.get('timestamp', None)
+
+    if value is None or timestamp is None:
+        return abort(400)
+
+    try:
+        value = int(value)
+
+    except:
+        traceback.print_exc()
+        return abort(400)
+
+    state['humidity'] = [timestamp, value]
+
+    return jsonify({'humidity': state['humidity']}), 200
+
+
+@app.route('/api/moisture', methods=['POST'])
+def api_update_moisture():
+    value = request.json.get('value', None)
+    timestamp = request.json.get('timestamp', None)
+
+    if value is None or timestamp is None:
+        return abort(400)
+
+    try:
+        value = round(float(value), 1)
+
+    except:
+        traceback.print_exc()
+        return abort(400)
+
+    state['moisture'] = [timestamp, value]
+
+    return jsonify({'moisture': state['moisture']}), 200

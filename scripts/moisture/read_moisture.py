@@ -1,35 +1,45 @@
 import machine
 
+import utime as time
+
+from controller import init_link, post_data
 
 adc = machine.ADC(machine.Pin(32))
 adc.atten(machine.ADC.ATTN_11DB)
 
+def read_avg(ticks=3):
+    vals = []
+
+    for _ in range(ticks):
+        time.sleep_ms(100)
+        vals.append(adc.read())
+
+    print (vals)
+
+    return sum(vals) / ticks
 
 try:
     ######################
     # Sensor calibration #
     ######################
 
-    # values on right are inverse * 1000 values on left
-    # dry air = 3750 (0%)
+    # air = 3750 (0%)
     # water = 1450 (100%)
     # The Difference     = 3750 - 1450 = 2300
     # 1 %                = 2300 / 100 = 23
+    base = read_avg()
+    fraction = min(max((3750 - base) / (3750 - 1450), 0), 1)
+    value = fraction * 100
 
-    hours = str(time.localtime()[3])
-    mins = str(time.localtime()[4])
-    secs = str(time.localtime()[5])
+    timestamp = '{}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}.0Z'.format(*time.localtime())
 
-    if int(secs) < 10:
-        secs = '0' + secs
-    if int(mins) < 10:
-        mins = '0' + mins
-    timestr = hours + ':' + mins + ':' + secs
+    addr = init_link('moisture-1')
+    post_data(addr, '/api/moisture', data={'value': value, 'timestamp': timestamp})
 
-    fraction = min(max((3750 - adc.read()) / (3750 - 1450), 0), 1)
-    SoilMoistVal = fraction * 100
-
-    print('fr', fraction, 'val', SoilMoistVal)
-
-except:
+except Exception as e:
+    print('Error')
+    print(e)
     machine.reset()
+
+sleep_delay = 60 * 1000 # * 10
+machine.deepsleep(sleep_delay)

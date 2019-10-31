@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=yolo
 WorkingDirectory=/home/yolo/dash
-ExecStart=/home/yolo/.local/share/virtualenvs/dash-rJLZGszc/bin/gunicorn -b localhost:8000 -w 4 server:app
+ExecStart=/home/yolo/.local/share/virtualenvs/dash-rJLZGszc/bin/gunicorn -k gevent -b 0.0.0.0:8000 -w 4 server:app
 Restart=always
 
 [Install]

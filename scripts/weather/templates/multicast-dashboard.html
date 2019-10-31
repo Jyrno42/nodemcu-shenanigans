@@ -26,10 +26,17 @@
                 <b id="hum">-</b>
                 <label>Humidity</label>
             </div>
+            <div class="value">
+                <b id="moisture">-</b>
+                <label>Moisture</label>
+            </div>
         </div>
 
         <div class="status">
-            IP: <span id="status-ip">-</span> last sensor tick <span id="status-sensortick">-</span>
+            <span>IP: <span id="status-ip">-</span><br></span>
+            <span>temp tick <span id="status-temptick">-</span><br></span>
+            <span>hum tick <span id="status-humtick">-</span><br></span>
+            <span>moist tick <span id="status-moisttick">-</span><br></span>
         </div>
 
         <script>
@@ -48,8 +55,11 @@
                 const dateNode = document.getElementById('date');
                 const tempNode = document.getElementById('temp');
                 const humNode = document.getElementById('hum');
+                const moistureNode = document.getElementById('moisture');
                 const ipNode = document.getElementById('status-ip');
-                const sensorTickNode = document.getElementById('status-sensortick');
+                const tempTick = document.getElementById('status-temptick');
+                const humTick = document.getElementById('status-humtick');
+                const moistTick = document.getElementById('status-moisttick');
                 let t = 0;
 
                 setInterval(() => {
@@ -71,21 +81,28 @@
                         if (res.ok) {
                             res.json().then((data) => {
                                 if (data.temperature) {
-                                    tempNode.textContent = `${data.temperature}°C`;
+                                    tempTick.textContent = data.temperature[0];
+                                    tempNode.textContent = `${data.temperature[1]}°C`;
                                 }
                             
                                 if (data.humidity === 'no-value') {
                                     humNode.parentNode.style.display = 'none';
+                                    humTick.parentNode.style.display = 'none';
                                 } else if (data.humidity) {
-                                    humNode.textContent = `${data.humidity}%`;
-                                } 
+                                    humTick.textContent = data.humidity[0];
+                                    humNode.textContent = `${data.humidity[1]}%`;
+                                }
+
+                                if (data.moisture === 'no-value') {
+                                    moistureNode.parentNode.style.display = 'none';
+                                    moistTick.parentNode.style.display = 'none';
+                                } else if (data.moisture) {
+                                    moistTick.textContent = data.moisture[0];
+                                    moistureNode.textContent = `${data.moisture[1]}%`;
+                                }
 
                                 if (data.ip) {
                                     ipNode.textContent = data.ip;
-                                }
-
-                                if (data.sensor_tick) {
-                                    sensorTickNode.textContent = data.sensor_tick;
                                 }
                             });
                         }
@@ -153,7 +170,7 @@
                 position: absolute;
                 left: 0;
                 right: 0;
-                bottom: 8vh;
+                bottom: 4vh;
                 text-align: center;
             }
         </style>

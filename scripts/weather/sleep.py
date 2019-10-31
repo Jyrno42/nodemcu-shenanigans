@@ -1,7 +1,7 @@
 import machine
 
 
-# Note: Wire D0 to RST on esp8266
+# Note: Wire D0 to RST on esp8266 (use machine.deepsleep(msecs) directly on ESP32)
 def deep_sleep(msecs):
     #configure RTC.ALARM0 to be able to wake the device
     rtc = machine.RTC()
