@@ -1,7 +1,11 @@
+import json
 import socket
 import struct
 import re
 import threading
+
+from datetime import datetime
+from time import sleep
 
 from flask import Flask
 
@@ -11,6 +15,8 @@ with open('multicast-dashboard.html') as h:
     html_content = h.read()
 
 state = {
+    'ip': None,
+    'sensor_tick': None,
     'temperature': None,
     'humidity': None
 }
@@ -22,10 +28,38 @@ def root():
 
 @app.route('/api/measurements')
 def measurements():
-    return {
-        'temperature': state['temperature'],
-        'humidity': state['humidity'],
-    }
+    return state
+
+
+@app.route('/api/ip')
+def get_ip():
+    return state['ip']
+
+
+@app.route('/api/ip/refresh', methods=['POST'])
+def api_refresh_ip():
+    state['ip'] = get_local_ip()
+
+    return state['ip']
+
+
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+
+def refresh_ip():
+    while True:
+        state['ip'] = get_local_ip()
+        sleep(180)
 
 
 def run_socket():
@@ -43,17 +77,28 @@ def run_socket():
             data = s.recvfrom(100)[0]
             data = data.decode('utf-8')
 
-            m = re.match(r'Temperature: (\d+) and Humidity: (\d+)%', data)
+            try:
+                data = json.loads(data)
 
-            if m:
-                if m.group(1):
-                    state['temperature'] = int(m.group(1))
+                try:
+                    state['temperature'] = round(data['temperature'], 1)
 
-                if m.group(2):
-                    state['humidity'] = int(m.group(2))
+                except (TypeError, ValueError):
+                    state['temperature'] = None
+
+                try:
+                    state['humidity'] = int(data['humidity'])
+
+                except (TypeError, ValueError):
+                    state['humidity'] = 'no-value'
+
+                state['sensor_tick'] = datetime.now().isoformat().split('.')[0]
+
+            except (ValueError, TypeError):
+                pass
 
     finally:
         s.close()
 
-thread = threading.Thread(target=run_socket)
-thread.start()
+threading.Thread(target=run_socket).start()
+threading.Thread(target=refresh_ip).start()

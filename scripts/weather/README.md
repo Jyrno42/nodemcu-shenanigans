@@ -1,11 +1,14 @@
 # Just weather station things
 
-ESP32 (IO15 is the data pin)
-
 **refs:**
 
-https://raw.githubusercontent.com/mcauser/micropython-tm1637
-https://randomnerdtutorials.com/esp32-esp8266-dht11-dht22-micropython-temperature-humidity-sensor/
+- https://raw.githubusercontent.com/mcauser/micropython-tm1637
+- http://osoyoo.com/2017/05/07/osoyoo-nodemcu-iot-programming-learning-starter-kit/
+
+- https://randomnerdtutorials.com/esp32-esp8266-dht11-dht22-micropython-temperature-humidity-sensor/
+
+- https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
+- https://randomnerdtutorials.com/micropython-ds18b20-esp32-esp8266/
 
 ## DHT11 + 4 digit lcd weather station
 

@@ -7,7 +7,7 @@
     </head>
 
     <body>
-        <div>
+        <div class="cell">
             <div class="value">
                 <span id="time"></span>
                 <label>Time</label>
@@ -17,7 +17,7 @@
                 <label>Date</label>
             </div>
         </div>
-        <div>
+        <div class="cell">
             <div class="value">
                 <b id="temp">-</b>
                 <label>Temperature</label>
@@ -26,6 +26,10 @@
                 <b id="hum">-</b>
                 <label>Humidity</label>
             </div>
+        </div>
+
+        <div class="status">
+            IP: <span id="status-ip">-</span> last sensor tick <span id="status-sensortick">-</span>
         </div>
 
         <script>
@@ -44,6 +48,8 @@
                 const dateNode = document.getElementById('date');
                 const tempNode = document.getElementById('temp');
                 const humNode = document.getElementById('hum');
+                const ipNode = document.getElementById('status-ip');
+                const sensorTickNode = document.getElementById('status-sensortick');
                 let t = 0;
 
                 setInterval(() => {
@@ -51,7 +57,7 @@
 
                     const sep = t % 2 === 0 ? ':' : ' ';
                     timeNode.textContent = `${prependZero(d.getHours())}${sep}${prependZero(d.getMinutes())}`;
-                    dateNode.textContent = `${d.getDate()}.${d.getMonth()}.${d.getFullYear()}`;
+                    dateNode.textContent = `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
 
                     t += 1;
                 }, 1000);
@@ -68,13 +74,27 @@
                                     tempNode.textContent = `${data.temperature}°C`;
                                 }
                             
-                                if (data.humidity) {
+                                if (data.humidity === 'no-value') {
+                                    humNode.parentNode.style.display = 'none';
+                                } else if (data.humidity) {
                                     humNode.textContent = `${data.humidity}%`;
+                                } 
+
+                                if (data.ip) {
+                                    ipNode.textContent = data.ip;
+                                }
+
+                                if (data.sensor_tick) {
+                                    sensorTickNode.textContent = data.sensor_tick;
                                 }
                             });
                         }
                     });
                 }, 2000);
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 4 * 60 * 60 * 1000);
             };
         </script>
 
@@ -92,7 +112,7 @@
                 flex-direction: column;
             }
 
-            body > div {
+            body > .cell {
                 height: 100vh;
                 width: 100vw;
                 display: flex;
@@ -127,6 +147,14 @@
                 font-size: .2em;
                 text-align: center;
                 text-transform: uppercase;
+            }
+
+            .status {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 8vh;
+                text-align: center;
             }
         </style>
     </body>

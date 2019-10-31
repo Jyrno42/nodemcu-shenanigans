@@ -1,0 +1,12 @@
+[Unit]
+Description=Dashboard flask app
+After=network.target
+
+[Service]
+User=yolo
+WorkingDirectory=/home/yolo/dash
+ExecStart=/home/yolo/.local/share/virtualenvs/dash-rJLZGszc/bin/gunicorn -b localhost:8000 -w 4 server:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
