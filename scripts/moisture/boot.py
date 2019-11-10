@@ -27,8 +27,9 @@ def do_connect():
             pass
 
 try:
-	do_connect()
-	settime()
+	# do_connect()
+	# settime()
+    pass
 	
 except:
 	time.sleep(60)
